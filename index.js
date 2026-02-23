@@ -25,8 +25,7 @@ let pilots = [];
       async function sync() {
         try {
           const res = await fetch(
-            "https://corsproxy.io/?" +
-              encodeURIComponent("https://api.ivao.aero/v2/tracker/whazzup"),
+            "https://api.ivao.aero/v2/tracker/whazzup",
           );
           const data = await res.json();
           pilots = data.clients.pilots;
