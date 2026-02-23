@@ -38,6 +38,17 @@ async function sync() {
   }
 }
 
+function formatIVAOTime(seconds) {
+  if (!seconds) return "----";
+  // Handle 24-hour rollover
+  const totalMinutes = Math.floor(seconds / 60) % 1440;
+  const h = Math.floor(totalMinutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const m = (totalMinutes % 60).toString().padStart(2, "0");
+  return `${h}${m}`;
+}
+
 function buildStrip(p, role) {
   const cs = p.callsign;
   const fp = p.flightPlan;
@@ -48,6 +59,7 @@ function buildStrip(p, role) {
     assignedSqk && assignedSqk !== tr.transponder.toString();
 
   const div = document.createElement("div");
+  const arrivalSeconds = (fp.actualDepartureTime || fp.departureTime) + fp.eet;
   div.className = `strip ${role}`;
   div.innerHTML = `
           <button class="btn-del" onclick="hideFlight('${cs}')">✕</button>
@@ -57,6 +69,14 @@ function buildStrip(p, role) {
           <div class="c-body">
             <div class="row-top">
               <div class="c-cs"><span class="label">Callsign</span>${cs}</div>
+              <div class="c-type">
+                <span class="label">CTOT Slot</span>
+                ${formatIVAOTime(fp.departureTime)}Z
+              </div>
+              <div class="c-type">
+                <span class="label">ETA</span>
+                ${formatIVAOTime(arrivalSeconds)}Z
+              </div>
               <div class="c-type"><span class="label">ACFT</span>${fp.aircraft?.icaoCode || "UNK"}/${fp.aircraftId?.charAt(0) || "M"}</div>
             </div>
             <div class="c-route"><span class="label">Route</span>${fp.route || "—"}</div>
