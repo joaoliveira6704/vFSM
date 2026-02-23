@@ -302,7 +302,44 @@
         <div id="bay-APP" class="strip-list"></div>
       </div>
     </div>
-
+    <div
+      class="bookings-section"
+      style="
+        padding: 20px;
+        background: #111;
+        border-top: 2px solid var(--border);
+      "
+    >
+      <h3 style="color: var(--accent); margin-top: 0">
+        AIRPORT BOOKINGS / ALL TRAFFIC
+      </h3>
+      <div style="overflow-x: auto">
+        <table
+          id="bookings-table"
+          style="
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+          "
+        >
+          <thead>
+            <tr
+              style="background: #222; color: #aaa; text-transform: uppercase"
+            >
+              <th style="padding: 10px; border: 1px solid #333">Callsign</th>
+              <th style="padding: 10px; border: 1px solid #333">Type</th>
+              <th style="padding: 10px; border: 1px solid #333">ACFT</th>
+              <th style="padding: 10px; border: 1px solid #333">CTOT/Dep</th>
+              <th style="padding: 10px; border: 1px solid #333">ETA/Arr</th>
+              <th style="padding: 10px; border: 1px solid #333">Origin</th>
+              <th style="padding: 10px; border: 1px solid #333">Dest</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-list"></tbody>
+        </table>
+      </div>
+    </div>
     <div>Made by: João Oliveira</div>
 
     <script src="./index.js"></script>

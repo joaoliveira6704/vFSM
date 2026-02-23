@@ -77,7 +77,7 @@ function buildStrip(p, role) {
                 <span class="label">ETA</span>
                 ${formatIVAOTime(arrivalSeconds)}Z
               </div>
-              <div class="c-type"><span class="label">ACFT</span>${fp.aircraft?.icaoCode || "UNK"}/${fp.aircraftId?.charAt(0) || "M"}</div>
+              <div class="c-type"><span class="label">ACFT</span>${fp.aircraft?.icaoCode || "UNK"}/${fp.aircraft?.wakeTurbulence || "M"}</div>
             </div>
             <div class="c-route"><span class="label">Route</span>${fp.route || "—"}</div>
             <div class="c-rmk"><span class="label">Remarks</span>${fp.remarks || "—"}</div>
@@ -145,6 +145,43 @@ function render() {
       ? parent.classList.add("collapsed")
       : parent.classList.remove("collapsed");
   });
+
+  // 4. Render Bookings Table
+  const bookingsList = document.getElementById("bookings-list");
+  bookingsList.innerHTML = "";
+
+  const relevantPilots = pilots.filter((p) => {
+    if (!p.flightPlan || !myIcao) return false;
+    return (
+      p.flightPlan.departureId === myIcao || p.flightPlan.arrivalId === myIcao
+    );
+  });
+
+  if (relevantPilots.length === 0) {
+    bookingsList.innerHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: #555;">No bookings found for ${myIcao}</td></tr>`;
+  } else {
+    relevantPilots.forEach((p) => {
+      const fp = p.flightPlan;
+      const isDep = fp.departureId === myIcao;
+      const arrivalSeconds =
+        (fp.actualDepartureTime || fp.departureTime) + fp.eet;
+
+      const tr = document.createElement("tr");
+      tr.style.borderBottom = "1px solid #222";
+      tr.style.color = isDep ? "var(--dep-blue)" : "var(--arr-pink)";
+
+      tr.innerHTML = `
+        <td style="padding: 10px; font-weight: bold;">${p.callsign}</td>
+        <td style="padding: 10px;">${isDep ? "DEPARTURE" : "ARRIVAL"}</td>
+        <td style="padding: 10px;">${fp.aircraft?.icaoCode || "---"}</td>
+        <td style="padding: 10px;">${formatIVAOTime(fp.departureTime)}Z</td>
+        <td style="padding: 10px;">${formatIVAOTime(arrivalSeconds)}Z</td>
+        <td style="padding: 10px;">${fp.departureId}</td>
+        <td style="padding: 10px;">${fp.arrivalId}</td>
+      `;
+      bookingsList.appendChild(tr);
+    });
+  }
 }
 
 icaoInput.oninput = render;
