@@ -185,5 +185,5 @@ function render() {
 }
 
 icaoInput.oninput = render;
-setInterval(sync, 5000);
+setInterval(sync, 15000);
 sync();
