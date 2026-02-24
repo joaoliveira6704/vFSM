@@ -70,8 +70,16 @@ function buildStrip(p, role) {
             <div class="row-top">
               <div class="c-cs"><span class="label">Callsign</span>${cs}</div>
                <div class="c-type">
-                <span class="label">Route</span>
-                ${fp.departureId} → ${fp.arrivalId} | ALTN: ${fp.alternativeId || "N/A"}
+                <span class="label">DEP</span>
+                ${fp.departureId}
+              </div>
+              <div class="c-type">
+                <span class="label">ARR</span>
+                ${fp.arrivalId}
+              </div>
+              <div class="c-type">
+                <span class="label">ALTN</span>
+                ${fp.alternativeId}
               </div>
               <div class="c-type">
                 <span class="label">CTOT Slot</span>
