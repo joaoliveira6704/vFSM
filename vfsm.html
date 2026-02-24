@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Virtual Flight Strip Manager - vFSM</title>
+    <style>
+      :root {
+        --bg: #050505;
+        --border: #333;
+        --dep-blue: #a8d1ff;
+        --arr-pink: #ffc9d6;
+        --accent: #0078d4;
+        --text-dark: #111;
+        --danger: #d93025;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        background: var(--bg);
+        color: #eee;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        overflow: scroll;
+      }
+
+      header {
+        padding: 10px 25px;
+        background: #111;
+        border-bottom: 2px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .icao-input {
+        background: #000;
+        border: 1px solid var(--accent);
+        color: #0f0;
+        padding: 10px;
+        font-weight: bold;
+        width: 100px;
+        text-align: center;
+        font-size: 1.1em;
+      }
+
+      .bay-container {
+        display: flex;
+        flex: 1;
+        overflow-x: auto;
+        gap: 12px;
+        padding: 12px;
+        background: #080808;
+        scroll-snap-type: x mandatory;
+        min-height: 0;
+      }
+      .bay {
+        flex: 1 1 650px;
+        min-width: 800px;
+        width: max-content;
+        display: flex;
+        flex-direction: column;
+        background: #000;
+        border: 2px solid var(--border);
+        border-radius: 6px;
+        scroll-snap-align: start;
+        transition: all 0.3s ease;
+      }
+
+      /* Collapsed Bay Logic */
+      .bay.collapsed {
+        flex: 0 0 60px;
+        min-width: 60px;
+        opacity: 0.4;
+      }
+      .bay.collapsed .bay-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        padding: 20px 5px;
+        border-bottom: none;
+        border-left: 4px solid var(--accent);
+      }
+      .bay.collapsed .strip-list {
+        display: none;
+      }
+
+      .bay-title {
+        background: #1a1a1a;
+        padding: 12px;
+        text-align: center;
+        font-weight: 900;
+        font-size: 14px;
+        color: #fff;
+        border-bottom: 4px solid var(--accent);
+        letter-spacing: 2px;
+      }
+      .strip-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .strip {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        border: 2px solid #000;
+        border-radius: 4px;
+        color: var(--text-dark);
+        position: relative;
+      }
+      .strip.departure {
+        background: var(--dep-blue);
+      }
+      .strip.arrival {
+        background: var(--arr-pink);
+      }
+
+      /* Delete Button */
+      .btn-del {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.1);
+        border: none;
+        color: var(--danger);
+        font-weight: 900;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 14px;
+        z-index: 10;
+        border-bottom-left-radius: 4px;
+      }
+      .btn-del:hover {
+        background: var(--danger);
+        color: white;
+      }
+
+      .c-sidebar {
+        display: flex;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.2);
+        width: 65px;
+      }
+      .m-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        font-size: 10px;
+        font-weight: 900;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .m-btn.active {
+        background: var(--accent);
+        color: white;
+      }
+
+      .c-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .row-top {
+        display: flex;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .c-cs {
+        font-size: 1.7em;
+        font-weight: 900;
+        padding: 6px 10px;
+        flex: 1;
+      }
+      .c-type {
+        font-weight: bold;
+        padding: 6px 10px;
+        border-left: 1px solid rgba(0, 0, 0, 0.1);
+        width: 80px;
+      }
+      .c-route,
+      .c-rmk {
+        padding: 5px 10px;
+        font-size: 11px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      .row-bottom {
+        display: flex;
+      }
+      .c-sid {
+        flex: 1;
+        padding: 6px 10px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .c-sqk,
+      .c-stand {
+        padding: 5px 8px;
+        border-left: 1px solid rgba(0, 0, 0, 0.1);
+        width: 80px;
+        text-align: center;
+      }
+
+      .c-cfl {
+        border-left: 2px solid #000;
+        width: 45px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .label {
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        opacity: 0.6;
+        display: block;
+      }
+      input.edit {
+        width: 100%;
+        border: none;
+        background: transparent;
+        font-weight: 900;
+        text-align: center;
+        outline: none;
+        text-transform: uppercase;
+      }
+      .sqk-alert {
+        background: #ff4d4d !important;
+        color: white !important;
+      }
+
+      .reset-btn {
+        background: #333;
+        color: #aaa;
+        border: 1px solid #444;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: 10px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div style="font-weight: 900; font-size: 1.3em">
+        Virtual Flight Strip Manager
+      </div>
+      <div>
+        <button class="reset-btn" onclick="clearHidden()">
+          Restore Deleted Strips
+        </button>
+        <input
+          type="text"
+          id="icao-filter"
+          class="icao-input"
+          maxlength="4"
+          placeholder="EGLL"
+        />
+      </div>
+    </header>
+    <div
+      id="atc-sidebar"
+      style="
+        background: #111;
+        padding: 5px;
+        display: flex;
+        gap: 10px;
+        border-bottom: 1px solid #333;
+        font-size: 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+      "
+    >
+      <span style="color: #888; font-weight: bold; padding: 2px 10px"
+        >ATC NEARBY:</span
+      >
+      <div id="atc-list" style="display: flex; gap: 8px"></div>
+    </div>
+    <div class="bay-container">
+      <div class="bay" id="parent-DEL">
+        <div class="bay-title">DELIVERY</div>
+        <div id="bay-DEL" class="strip-list"></div>
+      </div>
+      <div class="bay" id="parent-TAX">
+        <div class="bay-title">TAXI / GROUND</div>
+        <div id="bay-TAX" class="strip-list"></div>
+      </div>
+      <div class="bay" id="parent-TWR">
+        <div class="bay-title">TOWER / RUNWAY</div>
+        <div id="bay-TWR" class="strip-list"></div>
+      </div>
+      <div class="bay" id="parent-APP">
+        <div class="bay-title">APPROACH / DEP</div>
+        <div id="bay-APP" class="strip-list"></div>
+      </div>
+    </div>
+    <div
+      class="bookings-section"
+      style="
+        padding: 20px;
+        background: #111;
+        border-top: 2px solid var(--border);
+      "
+    >
+      <h3 style="color: var(--accent); margin-top: 0">
+        AIRPORT BOOKINGS / ALL TRAFFIC
+      </h3>
+      <div style="overflow-x: auto">
+        <table
+          id="bookings-table"
+          style="
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+          "
+        >
+          <thead>
+            <tr
+              style="background: #222; color: #aaa; text-transform: uppercase"
+            >
+              <th style="padding: 10px; border: 1px solid #333">Callsign</th>
+              <th style="padding: 10px; border: 1px solid #333">Type</th>
+              <th style="padding: 10px; border: 1px solid #333">ACFT</th>
+              <th style="padding: 10px; border: 1px solid #333">CTOT/Dep</th>
+              <th style="padding: 10px; border: 1px solid #333">ETA/Arr</th>
+              <th style="padding: 10px; border: 1px solid #333">Origin</th>
+              <th style="padding: 10px; border: 1px solid #333">Dest</th>
+            </tr>
+          </thead>
+          <tbody id="bookings-list"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>Made by: João Oliveira</div>
+
+    <script src="./index.js"></script>
+  </body>
+</html>

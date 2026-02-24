@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>vAWOS</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #e8e8e8;
+        font-family: "Roboto", sans-serif;
+        font-size: 12px;
+        color: #111;
+      }
+
+      /* ── TOP BAR ── */
+      .topbar {
+        background: #d6dce4;
+        border-bottom: 2px solid #999;
+        display: flex;
+        align-items: center;
+        padding: 5px 10px;
+        gap: 14px;
+      }
+      .topbar-meta {
+        font-size: 9px;
+        color: #555;
+        line-height: 1.5;
+      }
+      .topbar-meta b {
+        font-size: 11px;
+        color: #222;
+        display: block;
+        font-family: "Roboto Mono", monospace;
+      }
+      .clock-center {
+        flex: 1;
+        text-align: center;
+      }
+      .clock-utc {
+        font-family: "Roboto Mono", monospace;
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .clock-local {
+        font-size: 10px;
+        color: #666;
+        margin-top: 1px;
+      }
+      .search-row {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: 10px;
+      }
+      .search-row input {
+        border: 1px solid #888;
+        background: #fff;
+        padding: 4px 8px;
+        font-family: "Roboto Mono", monospace;
+        font-size: 13px;
+        width: 88px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .search-row input:focus {
+        outline: 1px solid #3a6ea8;
+      }
+      .btn-update {
+        background: #3a6ea8;
+        color: #fff;
+        border: none;
+        padding: 5px 14px;
+        font-size: 11px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .btn-update:hover {
+        background: #2a5280;
+      }
+      .status-badge {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 3px 8px;
+        border: 1px solid #aaa;
+        color: #666;
+        white-space: nowrap;
+      }
+      .status-badge.online {
+        color: #1a7a32;
+        border-color: #1a7a32;
+        background: #efffef;
+      }
+      .status-badge.offline {
+        color: #b03020;
+        border-color: #b03020;
+        background: #fff3f3;
+      }
+
+      /* ── OUTER WRAPPER ── */
+      .awos-wrap {
+        display: grid;
+        grid-template-columns: 215px 1fr 215px;
+        border: 1px solid #aaa;
+        margin: 6px;
+        background: #f8f8f8;
+      }
+
+      /* ── RUNWAY PANELS ── */
+      .rwy-panel {
+        background: #f4f4f4;
+        display: flex;
+        flex-direction: column;
+      }
+      .rwy-panel.left {
+        border-right: 1px solid #bbb;
+      }
+      .rwy-panel.right {
+        border-left: 1px solid #bbb;
+      }
+
+      .rwy-title {
+        background: #d6dce4;
+        border-bottom: 1px solid #bbb;
+        text-align: center;
+        padding: 4px 6px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .compass-area {
+        padding: 10px 10px 6px;
+        display: flex;
+        justify-content: center;
+      }
+      .compass-wrap {
+        position: relative;
+        width: 156px;
+        height: 156px;
+      }
+      .compass-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 156px;
+        height: 156px;
+      }
+
+      .needle {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        width: 2px;
+        height: 58px;
+        background: #cc2222;
+        transform-origin: bottom center;
+        transform: translateX(-50%);
+        transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .rwy-hdg-marker {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        width: 2px;
+        height: 58px;
+        background: rgba(30, 90, 180, 0.5);
+        transform-origin: bottom center;
+        transform: translateX(-50%);
+      }
+      .needle-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 7px;
+        height: 7px;
+        background: #555;
+        border-radius: 50%;
+      }
+      .dial-spd {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 30px;
+        font-weight: 700;
+        font-family: "Roboto Mono", monospace;
+        color: #cc2222;
+        line-height: 1;
+        pointer-events: none;
+      }
+      .dial-spd-lbl {
+        position: absolute;
+        top: 52%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        color: #777;
+        pointer-events: none;
+      }
+      .dial-dir {
+        position: absolute;
+        bottom: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 22px;
+        font-weight: 700;
+        font-family: "Roboto Mono", monospace;
+        color: #cc2222;
+        pointer-events: none;
+      }
+      .dial-dir-lbl {
+        position: absolute;
+        bottom: 10%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        color: #777;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      /* Wind data table */
+      .wind-table {
+        border-top: 1px solid #ccc;
+      }
+      .wt-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        border-bottom: 1px solid #ddd;
+      }
+      .wt-row.two {
+        grid-template-columns: 1fr 1fr;
+      }
+      .wt-cell {
+        padding: 3px 5px;
+        border-right: 1px solid #ddd;
+        text-align: center;
+      }
+      .wt-cell:last-child {
+        border-right: none;
+      }
+      .wt-lbl {
+        font-size: 8px;
+        color: #888;
+        line-height: 1.3;
+      }
+      .wt-val {
+        font-family: "Roboto Mono", monospace;
+        font-size: 12px;
+      }
+      .wt-unit {
+        font-size: 8px;
+        color: #777;
+      }
+
+      /* HW/XW */
+      .comp-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1px solid #ccc;
+        margin-top: auto;
+      }
+      .comp-cell {
+        padding: 5px 6px;
+        text-align: center;
+        border-right: 1px solid #ddd;
+      }
+      .comp-cell:last-child {
+        border-right: none;
+      }
+      .comp-lbl {
+        font-size: 9px;
+        color: #888;
+      }
+      .comp-val {
+        font-family: "Roboto Mono", monospace;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .hw {
+        color: #1a7a32;
+      }
+      .tw {
+        color: #b03020;
+      }
+      .xw-ok {
+        color: #111;
+      }
+      .xw-warn {
+        color: #b07020;
+      }
+      .xw-danger {
+        color: #b03020;
+      }
+      .comp-unit {
+        font-size: 9px;
+        color: #777;
+      }
+
+      /* ── CENTER PANEL ── */
+      .center-panel {
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sec {
+        border-bottom: 1px solid #ccc;
+      }
+      .sec-hdr {
+        background: #d6dce4;
+        border-bottom: 1px solid #bbb;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+      }
+      .sec-body {
+        display: grid;
+        padding: 3px 4px;
+      }
+      .g4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .g3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .g2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .dc {
+        text-align: center;
+        padding: 3px 4px;
+      }
+      .dc .lbl {
+        font-size: 8.5px;
+        color: #888;
+        line-height: 1.3;
+      }
+      .dc .val {
+        font-family: "Roboto Mono", monospace;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .dc .unit {
+        font-size: 8px;
+        color: #777;
+      }
+
+      .half-sec {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .half-left {
+        border-right: 1px solid #ccc;
+      }
+
+      .sub-hdr {
+        background: #e8ecf0;
+        border-bottom: 1px solid #ccc;
+        border-top: 1px solid #ccc;
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: 500;
+      }
+
+      .rvr-outer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-bottom: 1px solid #ccc;
+      }
+      .rvr-col {
+        padding: 0;
+      }
+      .rvr-col:first-child {
+        border-right: 1px solid #ccc;
+      }
+      .rvr-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 3px 6px;
+        gap: 2px;
+      }
+
+      .four-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        border-bottom: 1px solid #ccc;
+      }
+      .four-col > div {
+        border-right: 1px solid #ccc;
+      }
+      .four-col > div:last-child {
+        border-right: none;
+      }
+
+      .sky-body {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        padding: 2px 3px;
+        gap: 1px;
+      }
+      .vis-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 3px 6px;
+        gap: 2px;
+      }
+
+      .bottom-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .bottom-row > div:first-child {
+        border-right: 1px solid #ccc;
+      }
+      .thunder-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 3px 6px;
+        gap: 2px;
+      }
+      .msg-body {
+        padding: 4px 8px;
+      }
+      .metar-txt {
+        font-family: "Roboto Mono", monospace;
+        font-size: 9.5px;
+        word-break: break-all;
+        margin-top: 3px;
+        color: #222;
+      }
+
+      /* ── BOTTOM METAR STRIP ── */
+      .metar-strip {
+        margin: 0 6px 6px;
+        border: 1px solid #bbb;
+        border-top: none;
+        background: #fff;
+        padding: 3px 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .metar-strip .strip-lbl {
+        font-size: 9px;
+        color: #888;
+        white-space: nowrap;
+      }
+      .metar-strip .strip-val {
+        font-family: "Roboto Mono", monospace;
+        font-size: 10.5px;
+        color: #222;
+      }
+
+      /* loading */
+      .loading-msg {
+        grid-column: 1/-1;
+        padding: 50px;
+        text-align: center;
+        color: #888;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <button class="btn-update" onclick="location.href = 'index.html'">
+        MENU
+      </button>
+      <div class="topbar-meta">
+        <span>Last Update UTC</span>
+        <b id="lastUtc">—</b>
+      </div>
+      <div class="topbar-meta">
+        <b id="atisLetter" style="font-size: 5em"></b>
+      </div>
+      <div class="clock-center">
+        <div class="clock-utc" id="clockUtc">—</div>
+        <div class="clock-local" id="clockLocal">—</div>
+      </div>
+      <div class="topbar-meta" style="text-align: right">
+        <span>Date / Time Local</span>
+        <b id="lastLocal">—</b>
+      </div>
+      <div class="search-row">
+        <input
+          type="text"
+          id="icaoInput"
+          value="LPPR"
+          maxlength="4"
+          placeholder="ICAO"
+        />
+        <button class="btn-update" onclick="main()">UPDATE</button>
+      </div>
+      <div id="statusBadge" class="status-badge">STANDBY</div>
+    </div>
+
+    <div class="awos-wrap" id="awosWrap">
+      <div class="loading-msg">
+        Enter an ICAO code and press UPDATE to load weather data.
+      </div>
+    </div>
+
+    <div class="metar-strip">
+      <span class="strip-lbl">RAW METAR</span>
+      <span class="strip-val" id="rawMetar">—</span>
+    </div>
+
+    <script>
+      const JSON_FILE = "runways.json";
+      const IVAO_API = "https://api.ivao.aero/v2/tracker/whazzup";
+
+      function pad(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function updateClock() {
+        const now = new Date();
+        const utc = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+        document.getElementById("clockUtc").textContent = utc;
+        document.getElementById("clockLocal").textContent =
+          now.toLocaleString();
+      }
+      setInterval(updateClock, 1000);
+      updateClock();
+
+      async function main() {
+        const icao = document
+          .getElementById("icaoInput")
+          .value.toUpperCase()
+          .trim();
+        const badge = document.getElementById("statusBadge");
+        const atisLetterEl = document.getElementById("atisLetter");
+        badge.textContent = "FETCHING…";
+        badge.className = "status-badge";
+        document.getElementById("awosWrap").innerHTML =
+          '<div class="loading-msg">Fetching data…</div>';
+
+        try {
+          const [jsonRes, ivaoRes] = await Promise.all([
+            fetch(JSON_FILE).then((r) => r.json()),
+            fetch(IVAO_API).then((r) => r.json()),
+          ]);
+
+          const airportData = Array.isArray(jsonRes)
+            ? jsonRes.find((a) => a.airport_ident === icao)
+            : jsonRes.airport_ident === icao
+              ? jsonRes
+              : null;
+
+          if (!airportData) {
+            err(`Airport ${icao} not found in database.`, badge);
+            return;
+          }
+
+          const station = ivaoRes.clients.atcs.find(
+            (a) => a.callsign.includes(icao) && a.atis,
+          );
+          if (!station) {
+            err(`ATC / ATIS for ${icao} is currently offline.`, badge);
+            badge.className = "status-badge offline";
+            return;
+          }
+
+          const metar = station.atis.lines.find(
+            (l) => l.includes(icao) && l.includes("Z"),
+          );
+          if (!metar) {
+            err(`No METAR found in ATIS for ${icao}.`, badge);
+            return;
+          }
+
+          document.getElementById("rawMetar").textContent = metar;
+          document.getElementById("atisLetter").innerText =
+            station.atis.revision || "";
+          // ── Parse METAR ──
+          const wm = metar.match(/(\d{3})(\d{2,3})(?:G(\d{2,3}))?KT/);
+          const tm = metar.match(/(M?\d{2})\/(M?\d{2})/);
+          const qm = metar.match(/Q(\d{4})/);
+          const vm = metar.match(/\b(\d{4})\b/);
+          const cms = [...metar.matchAll(/(FEW|SCT|BKN|OVC)(\d{3})/g)];
+          const wxm = metar.match(/\b(RA|SN|FG|BR|TS|DZ|SH|GR|PL)\b/g);
+          const rvrm = [...metar.matchAll(/R(\d{2}[LRC]?)\/([PM]?\d{4})/g)];
+
+          const pt = (s) => (s ? parseInt(s.replace("M", "-")) : null);
+
+          const windDir = wm ? parseInt(wm[1]) : 0;
+          const windSpd = wm ? parseInt(wm[2]) : 0;
+          const windGst = wm && wm[3] ? parseInt(wm[3]) : null;
+          const tempC = pt(tm?.[1]);
+          const dewC = pt(tm?.[2]);
+          const qnhHpa = qm ? parseInt(qm[1]) : null;
+          const visMtr = vm ? parseInt(vm[1]) : null;
+          const clouds = cms.map((m) => ({
+            type: m[1],
+            alt: parseInt(m[2]) * 100,
+          }));
+          const wx = wxm ? wxm.join(" ") : "";
+          const rvrs = rvrm.map((m) => ({ rwy: m[1], val: m[2] }));
+          const humidity =
+            tempC !== null && dewC !== null
+              ? Math.round(
+                  (100 * Math.exp((17.625 * dewC) / (243.04 + dewC))) /
+                    Math.exp((17.625 * tempC) / (243.04 + tempC)),
+                )
+              : null;
+          const densAlt =
+            qnhHpa !== null && tempC !== null
+              ? Math.round((1013.25 - qnhHpa) * 30 + (tempC - 15) * 120)
+              : null;
+
+          const now = new Date();
+          const utcStr = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())} ${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+          document.getElementById("lastUtc").textContent = utcStr;
+          document.getElementById("lastLocal").textContent =
+            now.toLocaleString();
+
+          const le = {
+            id: airportData.le_ident,
+            hdg: parseFloat(airportData.le_heading_degT),
+          };
+          const he = {
+            id: airportData.he_ident,
+            hdg: parseFloat(airportData.he_heading_degT),
+          };
+
+          const data = {
+            windDir,
+            windSpd,
+            windGst,
+            tempC,
+            dewC,
+            qnhHpa,
+            visMtr,
+            clouds,
+            wx,
+            rvrs,
+            humidity,
+            densAlt,
+            metar,
+          };
+
+          document.getElementById("awosWrap").innerHTML =
+            rwyPanel(le, data, "left") +
+            centerPanel(data, le, he) +
+            rwyPanel(he, data, "right");
+
+          badge.textContent = "ONLINE";
+          badge.className = "status-badge online";
+        } catch (e) {
+          err(
+            "Error: Check that runways.json is in the correct directory.",
+            badge,
+          );
+          badge.className = "status-badge offline";
+          console.error(e);
+        }
+      }
+
+      function err(msg, badge) {
+        document.getElementById("awosWrap").innerHTML =
+          `<div class="loading-msg">${msg}</div>`;
+        badge.textContent = "ERROR";
+        badge.className = "status-badge offline";
+      }
+      setInterval(main, 60000);
+      // ── Compass SVG ──
+      function compassSVG() {
+        let ticks = "";
+        for (let i = 0; i < 360; i += 5) {
+          const major = i % 30 === 0;
+          const mid = i % 10 === 0;
+          const len = major ? 11 : mid ? 7 : 4;
+          const sw = major ? 1.5 : 0.7;
+          const col = major ? "#555" : "#bbb";
+          const r = 72;
+          const rad = ((i - 90) * Math.PI) / 180;
+          const x1 = 78 + r * Math.cos(rad),
+            y1 = 78 + r * Math.sin(rad);
+          const x2 = 78 + (r - len) * Math.cos(rad),
+            y2 = 78 + (r - len) * Math.sin(rad);
+          ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${col}" stroke-width="${sw}"/>`;
+        }
+        const labs = [
+          { d: 0, l: "N" },
+          { d: 30, l: "30" },
+          { d: 60, l: "60" },
+          { d: 90, l: "E" },
+          { d: 120, l: "12" },
+          { d: 150, l: "15" },
+          { d: 180, l: "S" },
+          { d: 210, l: "21" },
+          { d: 240, l: "24" },
+          { d: 270, l: "W" },
+          { d: 300, l: "30" },
+          { d: 330, l: "33" },
+        ];
+        let labHtml = "";
+        labs.forEach((it) => {
+          const r = 60;
+          const rad = ((it.d - 90) * Math.PI) / 180;
+          const x = 78 + r * Math.cos(rad),
+            y = 78 + r * Math.sin(rad);
+          const cardinal = ["N", "E", "S", "W"].includes(it.l);
+          labHtml += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle"
+      fill="${cardinal ? "#222" : "#666"}" font-family="Roboto,sans-serif"
+      font-size="${cardinal ? 9 : 7}" font-weight="${cardinal ? "bold" : "normal"}">${it.l}</text>`;
+        });
+        return `<svg class="compass-svg" viewBox="0 0 156 156">
+    <circle cx="78" cy="78" r="75" fill="#f0f0f0" stroke="#bbb" stroke-width="1.5"/>
+    <circle cx="78" cy="78" r="50" fill="none" stroke="#ddd" stroke-width="0.8"/>
+    ${ticks}${labHtml}
+  </svg>`;
+      }
+
+      function rwyPanel(rwy, d, side) {
+        const rel = d.windDir - rwy.hdg;
+        const rad = (rel * Math.PI) / 180;
+        const xw = Math.abs(Math.sin(rad) * d.windSpd).toFixed(0);
+        const hw = (Math.cos(rad) * d.windSpd).toFixed(0);
+        const isH = parseFloat(hw) >= 0;
+        const xwCls = xw > 20 ? "xw-danger" : xw > 15 ? "xw-warn" : "xw-ok";
+        const hwCls = isH ? "hw" : "tw";
+
+        const spdStr = String(d.windSpd).padStart(2, "0");
+        const dirStr = String(d.windDir).padStart(3, "0") + "°";
+        const gust = d.windGst ? `${d.windGst}` : "---";
+
+        return `
+  <div class="rwy-panel ${side}">
+    <div class="rwy-title">Runway ${rwy.id} Wind</div>
+    <div class="compass-area">
+      <div class="compass-wrap">
+        ${compassSVG()}
+        <div class="rwy-hdg-marker" style="transform:translateX(-50%) rotate(${rwy.hdg}deg)"></div>
+        <div class="needle" style="transform:translateX(-50%) rotate(${d.windDir}deg)"></div>
+        <div class="needle-center"></div>
+        <div class="dial-spd">${spdStr}</div>
+        <div class="dial-spd-lbl">wind speed</div>
+        <div class="dial-dir">${dirStr}</div>
+        <div class="dial-dir-lbl">wind direction</div>
+      </div>
+    </div>
+
+    <div class="wind-table">
+      <div class="wt-row">
+        <div class="wt-cell">
+          <div class="wt-lbl">2' Wind Speed</div>
+          <div class="wt-val">${d.windSpd.toFixed(1)} <span class="wt-unit">kts</span></div>
+        </div>
+        <div class="wt-cell">
+          <div class="wt-lbl">2' Wind Sp. Min.</div>
+          <div class="wt-val">--- <span class="wt-unit">kts</span></div>
+        </div>
+        <div class="wt-cell">
+          <div class="wt-lbl">2' Wind Sp. Max.</div>
+          <div class="wt-val">${gust} <span class="wt-unit">kts</span></div>
+        </div>
+        <div class="wt-cell">
+          <div class="wt-lbl">12' Wind Gust</div>
+          <div class="wt-val">${gust} <span class="wt-unit">kts</span></div>
+        </div>
+      </div>
+      <div class="wt-row two">
+        <div class="wt-cell">
+          <div class="wt-lbl">2' Wind Direction</div>
+          <div class="wt-val">${String(d.windDir).padStart(3, "0")}°</div>
+        </div>
+        <div class="wt-cell">
+          <div class="wt-lbl">2' COW Variation</div>
+          <div class="wt-val">---</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-row">
+      <div class="comp-cell">
+        <div class="comp-lbl">${isH ? "HEADWIND" : "TAILWIND"}</div>
+        <div class="comp-val ${hwCls}">${Math.abs(hw)}</div>
+        <div class="comp-unit">kt</div>
+      </div>
+      <div class="comp-cell">
+        <div class="comp-lbl">CROSSWIND</div>
+        <div class="comp-val ${xwCls}">${xw}</div>
+        <div class="comp-unit">kt</div>
+      </div>
+    </div>
+  </div>`;
+      }
+
+      function centerPanel(d, le, he) {
+        const f = (v) => (v !== null && v !== undefined ? String(v) : "---");
+        const fC = (v) => (v !== null && v !== undefined ? `${v}°C` : "---");
+        const qnhInHg = d.qnhHpa ? (d.qnhHpa / 33.864).toFixed(2) : "---";
+        const visKm = d.visMtr ? (d.visMtr / 1000).toFixed(1) : "---";
+        const vis10Km = d.visMtr
+          ? (Math.min(d.visMtr, 10000) / 1000).toFixed(1)
+          : "---";
+
+        // Sky clouds - up to 4 slots
+        const skySlots = Array.from(
+          { length: 4 },
+          (_, i) => d.clouds[i] || { type: "CLR", alt: null },
+        );
+
+        // RVR lookup
+        const leNum = le.id.replace(/[LRC]/g, "");
+        const heNum = he.id.replace(/[LRC]/g, "");
+        const rvrLe = d.rvrs.find((r) => r.rwy.includes(leNum));
+        const rvrHe = d.rvrs.find((r) => r.rwy.includes(heNum));
+
+        function dc(lbl, val, unit = "") {
+          return `<div class="dc">
+      <div class="lbl">${lbl}</div>
+      <div class="val">${val}${unit ? `<span class="unit"> ${unit}</span>` : ""}</div>
+    </div>`;
+        }
+
+        return `
+  <div class="center-panel">
+
+    <!-- Temp & Humidity -->
+    <div class="sec">
+      <div class="sec-hdr">Temperature &amp; Humidity</div>
+      <div class="sec-body g4">
+        ${dc("0' Temperature", fC(d.tempC))}
+        ${dc("0' Humidity", d.humidity !== null ? `${d.humidity}%` : "---")}
+        ${dc("0' Dew Point", fC(d.dewC))}
+        ${dc("12h Temperature", "---")}
+      </div>
+    </div>
+
+    <!-- Pressure -->
+    <div class="sec">
+      <div class="sec-hdr">Pressure</div>
+      <div class="sec-body g4">
+        ${dc("QFE", d.qnhHpa ? `${d.qnhHpa - 1}` : "---", "hPa")}
+        ${dc("QNH", d.qnhHpa ? `${d.qnhHpa}` : "---", "hPa")}
+        ${dc("Altimeter setting", qnhInHg, "inHg")}
+        ${dc("Density Altitude", f(d.densAlt), "ft")}
+      </div>
+    </div>
+
+    <!-- Precip + Solar -->
+    <div class="sec half-sec">
+      <div class="half-left">
+        <div class="sec-hdr">Precipitation</div>
+        <div class="sec-body g3">
+          ${dc("Occurrence", "---")}
+          ${dc("Accumulation", "0", "mm")}
+          ${dc("Daily Rate", "0", "mm")}
+        </div>
+      </div>
+      <div>
+        <div class="sec-hdr">Solar Radiation</div>
+        <div class="sec-body g2">
+          ${dc("2' Solar Rad.", "---", "W/m²")}
+          ${dc("10' Solar Rad.", "---", "W/m²")}
+        </div>
+      </div>
+    </div>
+
+    <!-- Present WX -->
+    <div class="sec">
+      <div class="sec-hdr">Present Weather</div>
+      <div class="sec-body" style="grid-template-columns:2fr 1fr 1fr 1fr;">
+        <div class="dc">
+          <div class="lbl">WX</div>
+          <div class="val" style="font-size:13px;">${d.wx || "NONE"}</div>
+        </div>
+        ${dc("AL", "---")}
+        ${dc("RL", "---")}
+        ${dc("CT", "---")}
+      </div>
+    </div>
+
+    <!-- RVR -->
+    <div class="rvr-outer">
+      <div class="rvr-col">
+        <div class="sub-hdr">${le.id} RVR</div>
+        <div class="rvr-body">
+          ${dc("TD", rvrLe ? rvrLe.val : "---", "m")}
+          ${dc("RD", "---")}
+        </div>
+      </div>
+      <div class="rvr-col">
+        <div class="sub-hdr">${he.id} RVR</div>
+        <div class="rvr-body">
+          ${dc("TD", rvrHe ? rvrHe.val : "---", "m")}
+          ${dc("RD", "---")}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sky + Visibility (4-col) -->
+    <div class="four-col">
+      <div>
+        <div class="sub-hdr">${le.id} Sky</div>
+        <div class="sky-body">
+          ${skySlots.map((c, i) => `<div class="dc"><div class="lbl">Cloud ${i + 1}</div><div class="val" style="font-size:11px;">${c.type}</div>${c.alt ? `<div class="unit">${c.alt}ft</div>` : ""}</div>`).join("")}
+          <div class="dc"><div class="lbl">VV</div><div class="val" style="font-size:11px;">---</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="sub-hdr">${le.id} Visibility</div>
+        <div class="vis-body">
+          ${dc("1' Vis", visKm, "km")}
+          ${dc("10' Vis", vis10Km, "km")}
+        </div>
+      </div>
+      <div>
+        <div class="sub-hdr">${he.id} Visibility</div>
+        <div class="vis-body">
+          ${dc("1' Vis", visKm, "km")}
+          ${dc("10' Vis", vis10Km, "km")}
+        </div>
+      </div>
+      <div>
+        <div class="sub-hdr">${he.id} Sky</div>
+        <div class="sky-body">
+          ${skySlots.map((c, i) => `<div class="dc"><div class="lbl">Cloud ${i + 1}</div><div class="val" style="font-size:11px;">${c.type}</div>${c.alt ? `<div class="unit">${c.alt}ft</div>` : ""}</div>`).join("")}
+          <div class="dc"><div class="lbl">VV</div><div class="val" style="font-size:11px;">---</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thunder + Messages -->
+    <div class="bottom-row">
+      <div>
+        <div class="sub-hdr">Thunderstorm &amp; Lightning</div>
+        <div class="thunder-body">
+          ${dc("Distance", "---")}
+          ${dc("Direction", "---")}
+          ${dc("Count", "---")}
+        </div>
+      </div>
+      <div>
+        <div class="sub-hdr">Reports &amp; Messages</div>
+        <div class="msg-body">
+          <div class="lbl">METAR</div>
+          <div class="metar-txt">${d.metar}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>`;
+      }
+    </script>
+  </body>
+</html>
