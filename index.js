@@ -69,6 +69,10 @@ function buildStrip(p, role) {
           <div class="c-body">
             <div class="row-top">
               <div class="c-cs"><span class="label">Callsign</span>${cs}</div>
+               <div class="c-type">
+                <span class="label">Route</span>
+                ${fp.departureId} → ${fp.arrivalId} | ALTN: ${fp.alternativeId || "N/A"}
+              </div>
               <div class="c-type">
                 <span class="label">CTOT Slot</span>
                 ${formatIVAOTime(fp.departureTime)}Z
